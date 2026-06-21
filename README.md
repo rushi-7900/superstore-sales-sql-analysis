@@ -167,3 +167,119 @@ BSc Data Science (2026)
 🔗 [LinkedIn](https://www.linkedin.com/in/rushi-sultane-32284b381)  
 💻 [GitHub](https://github.com/rushi-7900)  
   
+
+
+## 📝 SQL Queries Showcase
+
+### Query 1: Year-over-Year (YoY) Sales Growth Rate by Category
+```sql
+SELECT 
+    p.category,
+    YEAR(o.order_date_clean) AS order_year,
+    SUM(s.sales) AS total_sales,
+    LAG(SUM(s.sales)) OVER (
+        PARTITION BY p.category 
+        ORDER BY YEAR(o.order_date_clean)
+    ) AS prev_year_sales,
+    ROUND(
+        (
+            SUM(s.sales) - LAG(SUM(s.sales)) OVER (
+                PARTITION BY p.category 
+                ORDER BY YEAR(o.order_date_clean)
+            )
+        ) /
+        LAG(SUM(s.sales)) OVER (
+            PARTITION BY p.category 
+            ORDER BY YEAR(o.order_date_clean)
+        ) * 100,
+        2
+    ) AS yoy_growth_rate
+FROM products p
+JOIN sales s ON p.product_id = s.product_id
+JOIN orders o ON s.order_id = o.order_id
+GROUP BY p.category, YEAR(o.order_date_clean)
+ORDER BY p.category, order_year;
+```
+![YoY Growth Output](Screenshots/YoY_Growth.png)
+
+
+### Query 2: Top 3 Customers per Region by Profit Contribution
+```sql
+SELECT region, customer_id, customer_name, total_profit, rnk
+FROM (
+    SELECT 
+        o.region,
+        c.customer_id,
+        c.customer_name,
+        SUM(s.profit) AS total_profit,
+        RANK() OVER (
+            PARTITION BY o.region
+            ORDER BY SUM(s.profit) DESC
+        ) AS rnk
+    FROM customers c
+    INNER JOIN orders o ON c.customer_id = o.customer_id
+    INNER JOIN sales s ON o.order_id = s.order_id
+    GROUP BY o.region, c.customer_id, c.customer_name
+) ranked
+WHERE rnk <= 3
+ORDER BY region, rnk;
+```
+![Top_Customer_Output](Screenshots/Top_Customers.png)
+
+
+
+### Query 3: Rank Customers by Total Sales Within Each Segment
+```sql
+SELECT
+    c.segment,
+    c.customer_id,
+    c.customer_name,
+    SUM(s.sales) AS total_sales,
+    RANK() OVER (
+        PARTITION BY c.segment
+        ORDER BY SUM(s.sales) DESC
+    ) AS ranking
+FROM customers c
+INNER JOIN orders o ON c.customer_id = o.customer_id
+INNER JOIN sales s ON o.order_id = s.order_id
+GROUP BY c.segment, c.customer_id, c.customer_name
+ORDER BY c.segment, ranking;
+```
+![Rank_Customer_Segment](Screenshots/Segment_Ranking.png)
+
+
+### Query 4: Most Common Ship Mode Used in Each Region
+```sql
+SELECT region, ship_mode, order_count
+FROM (
+    SELECT
+        o.region,
+        o.ship_mode,
+        COUNT(*) AS order_count,
+        RANK() OVER (
+            PARTITION BY o.region
+            ORDER BY COUNT(*) DESC
+        ) AS rnk
+    FROM orders o
+    GROUP BY o.region, o.ship_mode
+) ranked
+WHERE rnk = 1
+ORDER BY region;
+```
+![Ship_Mode_Region](Screenshots/Ship_Mode.png)
+
+
+### Query 5: Profit Margin Analysis for Each Product
+```sql
+SELECT
+    p.product_name,
+    p.product_id,
+    SUM(s.sales) AS total_sales,
+    SUM(s.profit) AS total_profit,
+    ROUND(SUM(s.profit) / SUM(s.sales), 2) AS total_margin
+FROM products p
+INNER JOIN sales s ON p.product_id = s.product_id
+GROUP BY p.product_name, p.product_id
+ORDER BY total_margin DESC;
+```
+![Profit_Margin_Output](Screenshots/Profit_Margin.png)
