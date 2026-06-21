@@ -166,4 +166,4 @@ BSc Data Science (2026)
 
 🔗 [LinkedIn](https://www.linkedin.com/in/rushi-sultane-32284b381)  
 💻 [GitHub](https://github.com/rushi-7900)  
-
+  
